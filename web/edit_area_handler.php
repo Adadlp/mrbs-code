@@ -68,11 +68,6 @@ foreach($form_vars as $var => $var_type)
 
 }
 
-if (!isset($area_default_type))
-{
-  $area_default_type = $area_defaults['default_type'];
-}
-
 // Get the max_per_interval form variables
 foreach ($interval_types as $interval_type)
 {

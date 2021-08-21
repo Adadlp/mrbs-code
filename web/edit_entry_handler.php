@@ -10,7 +10,7 @@ use MRBS\Form\Form;
 use MRBS\Form\ElementInputSubmit;
 
 
-function invalid_booking(string $message) : void
+function invalid_booking($message)
 {
   global $view, $view_all, $year, $month, $day, $area, $room;
 
@@ -870,7 +870,7 @@ else
   if (!empty($result['violations']['errors']))
   {
     echo "<p>\n";
-    echo get_vocab("rules_broken") . "\n";
+    echo get_vocab("rules_broken") . ":\n";
     echo "</p>\n";
     echo "<ul>\n";
     foreach ($result['violations']['errors'] as $rule)
@@ -895,67 +895,67 @@ else
 
 echo "<div id=\"submit_buttons\">\n";
 
+// Back button
 $form = new Form();
 
-$form->setAttributes(array(
-    'method' => 'post',
-    'action' => multisite(this_page())
-  ));
+$form->setAttributes(array('method' => 'post',
+                           'action' => multisite($returl)));
 
-// Back button
 $submit = new ElementInputSubmit();
-$submit->setAttributes(array(
-    'formaction' => multisite('edit_entry.php'),
-    'name' => 'back_button',
-    'value' => get_vocab('back')
-  ));
+$submit->setAttribute('value', get_vocab('back'));
 $form->addElement($submit);
+
+$form->render();
+
 
 // Skip and Book button (to book the entries that don't conflict)
 // Only show this button if there were no policies broken and it's a series
 if (empty($result['violations']['errors'])  &&
     isset($rep_type) && ($rep_type != REP_NONE))
 {
-  $submit = new ElementInputSubmit();
-  $submit->setAttributes(array(
-      'value' => get_vocab('skip_and_book'),
-      'title' => get_vocab('skip_and_book_note')
-    ));
-  $form->addElement($submit);
-  // Force a skip next time round
-  $skip = 1;
-}
+  $form = new Form();
 
-// Put the booking data in as hidden inputs
-// First the ordinary fields
-foreach ($form_vars as $var => $var_type)
-{
-  if ($var_type == 'array')
+  $form->setAttributes(array('method' => 'post',
+                             'action' => multisite(this_page())));
+
+  // Put the booking data in as hidden inputs
+  $skip = 1;  // Force a skip next time round
+  // First the ordinary fields
+  foreach ($form_vars as $var => $var_type)
   {
-    // See the comment at the top of the page about array formats
-    foreach ($$var as $value)
+    if ($var_type == 'array')
     {
-      if (isset($value))
+      // See the comment at the top of the page about array formats
+      foreach ($$var as $value)
       {
-        $form->addHiddenInput("${var}[]", $value);
+        if (isset($value))
+        {
+          $form->addHiddenInput("${var}[]", $value);
+        }
       }
     }
+    elseif (isset($$var))
+    {
+      $form->addHiddenInput($var, $$var);
+    }
   }
-  elseif (isset($$var))
+  // Then the custom fields
+  foreach($fields as $field)
   {
-    $form->addHiddenInput($var, $$var);
+    if (array_key_exists($field['name'], $custom_fields) && isset($custom_fields[$field['name']]))
+    {
+      $form->addHiddenInput(VAR_PREFIX . $field['name'], $custom_fields[$field['name']]);
+    }
   }
-}
-// Then the custom fields
-foreach($fields as $field)
-{
-  if (array_key_exists($field['name'], $custom_fields) && isset($custom_fields[$field['name']]))
-  {
-    $form->addHiddenInput(VAR_PREFIX . $field['name'], $custom_fields[$field['name']]);
-  }
-}
+  // Submit button
+  $submit = new ElementInputSubmit();
+  $submit->setAttributes(array('value' => get_vocab('skip_and_book'),
+                               'title' => get_vocab('skip_and_book_note')));
 
-$form->render();
+  $form->addElement($submit);
+
+  $form->render();
+}
 
 echo "</div>\n";
 

@@ -72,6 +72,7 @@ function create_details_body($data, $as_html=false, $keep_private=false, $room_d
       case 'description':
       case 'room_name':
       case 'area_name':
+      case 'type':
       case 'room_id':
       case 'entry_info_time':
       case 'entry_info_user':
@@ -80,10 +81,6 @@ function create_details_body($data, $as_html=false, $keep_private=false, $room_d
       case 'repeat_info_user':
       case 'repeat_info_text':
         $data[$key] = $hide_this_field ? $private_text : $data[$key];
-        break;
-
-      case 'type':
-        $data[$key] = $hide_this_field ? $private_text : get_type_vocab($data[$key]);
         break;
 
       case 'create_by':
@@ -216,8 +213,9 @@ function create_details_body($data, $as_html=false, $keep_private=false, $room_d
         // Type
         if (isset($booking_types) && (count($booking_types) > 1))
         {
-          $class = ($keep_private && !empty($is_private_field['entry.type'])) ? "private" : "";
-          $tbody .= create_details_row(get_vocab("type"), $data['type'], $as_html, $class);
+          $type = get_type_vocab($data['type']);
+          $value = (empty($type)) ? "?${data['type']}?" : $type;
+          $tbody .= create_details_row(get_vocab("type"), $value, $as_html);
         }
         break;
 

@@ -339,16 +339,12 @@ $twentyfourhour_format = true;
 // Formats used for dates and times.   For formatting options
 // see http://php.net/manual/function.strftime.php.   Note that MRBS will automatically
 // convert the following formats which are not supported on Windows: %e, %l, %P and %R.
-// MRBS will use IntlDateFormatter if it exists in preference to strftime() and try and convert
-// the strftime formats into an equivalent pattern for use with IntlDateFormatter.  The following
-// strftime formats do not have an equivalent and are not supported: %u, %w, %U, %V, %W, %C,
-// %g, $G, %l and %s.
 $strftime_format['date']               = "%A %d %B %Y";  // Used in Day view
 $strftime_format['date_short']         = "%x";           // Used in Search results
 $strftime_format['dayname']            = "%A";           // Used in Month view
 $strftime_format['dayname_edit']       = "%a";           // Used in edit_entry form
 $strftime_format['weekview_date']      = "%b %e";        // Used in the table header in Week view
-$strftime_format['weekview_headers']   = "%a<br>%b %e";  // Used in the table header in Week view (all rooms)
+$strftime_format['weekview_headers']   = "%a<br>%b %e";  // Used in the table header in Month view (all rooms)
 $strftime_format['monthview_headers']  = "%a<br>%e";     // Used in the table header in Month view (all rooms)
 $strftime_format['minical_monthname']  = "%B %Y";        // Used in mini calendar heading
 $strftime_format['minical_dayname']    = "%a";           // Used in mini calendar heading
@@ -797,9 +793,6 @@ $max_level = 2;
 $min_user_viewing_level = 2;
 // The lowest level of admin allowed to edit other users
 $min_user_editing_level = 2;
-// The lowest level of admin allowed to edit other bookings
-$min_booking_admin_level = 2;
-
 
 // Password policy.  Uncomment the variables and set them to the
 // required values as appropriate.
@@ -1063,9 +1056,6 @@ $auth['saml']['authsource'] = 'default-sp';
 $auth['saml']['attr']['username'] = 'sAMAccountName';
 $auth['saml']['attr']['mail'] = 'mail';
 $auth['saml']['admin']['memberOf'] = ['CN=Domain Admins,CN=Users,DC=example,DC=com'];
-// MRBS session initialisation can interfere with session handling in some
-// SAML libraries.  If so, set this to true.
-$auth['saml']['disable_mrbs_session_init'] = false;
 
 // This scheme assumes that you've already configured SimpleSamlPhp,
 // and that you have set up aliases in your webserver so that SimpleSamlPhp
@@ -1355,18 +1345,6 @@ $smtp_settings['secure'] = '';         // Encryption method: '', 'tls' or 'ssl' 
                                        // set to true.
 $smtp_settings['username'] = '';       // Username (if using authentication)
 $smtp_settings['password'] = '';       // Password (if using authentication)
-
-// The hostname to use in the Message-ID header and as default HELO string.
-// If empty, PHPMailer attempts to find one with, in order,
-// $_SERVER['SERVER_NAME'], gethostname(), php_uname('n'), or the value
-// 'localhost.localdomain'.
-$smtp_settings['hostname'] = '';
-
-// The SMTP HELO/EHLO name used for the SMTP connection.
-// Default is $smtp_settings['hostname']. If $smtp_settings['hostname'] is empty, PHPMailer attempts to find
-// one with the same method described above for $smtp_settings['hostname'].
-$smtp_settings['helo'] = '';
-
 $smtp_settings['disable_opportunistic_tls'] = false; // Set this to true to disable
                                                      // opportunistic TLS
                                                      // https://github.com/PHPMailer/PHPMailer/wiki/Troubleshooting#opportunistic-tls
@@ -1532,9 +1510,9 @@ $default_name_display_name = false;
 // Default long description for new bookings
 $default_description = "";
 
-// Only required if your MRBS installation runs from a Git repository
-// and you want the "Help" page to show the Git commit ID you are on. Default
-// should work if "git" is in your search path, on Windows you may need to specify the
-// full path to your "git" executable, e.g.:
-// "c:/Program Files/TortoiseGit/git.exe"
-$git_command = "git";
+// Only required if your MRBS installation runs from a Mercurial repository
+// and you want the "Help" page to show the Mercurial changeset ID you
+// are on. Default should work if "hg" is in your search path, on Windows
+// you may need to specify the full path to your "hg" executable, e.g.:
+// "c:/Program Files/TortoiseHg/hg.exe"
+$hg_command = "hg";

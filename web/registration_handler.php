@@ -20,7 +20,7 @@ function cancel($registration_id)
 
   // Check that the user is authorised for this operation
   if (!isset($entry) ||
-      (!getWritable($registration['username'], $entry['room_id']) &&
+      (!getWritable($registration['fullname'], $entry['room_id']) &&
        !getWritable($registration['create_by'], $entry['room_id'])))
   {
     return;
@@ -45,12 +45,12 @@ function cancel($registration_id)
 
 
 // Register a user for an event
-function register($username, $event_id)
+function register($fullname, $teilnehmertyp, $email, $event_id)
 {
   $entry = get_entry_by_id($event_id);
 
   // Check that the user is authorised for this operation
-  if (!isset($entry) || !(can_register_others($entry['room_id']) || getWritable($username, $entry['room_id'])))
+  if (!isset($entry) || !(can_register_others($entry['room_id']) || getWritable($fullname, $entry['room_id'])))
   {
     return;
   }
@@ -73,22 +73,27 @@ function register($username, $event_id)
     // ... and that there are spare places
     $n_registered = count($data['registrants']);
     if (empty($data['registrant_limit_enabled']) ||
+
       ($data['registrant_limit'] > $n_registered))
     {
       // ... and that the user hasn't already been registered
-      if (!in_arrayi($username, array_column($data['registrants'], 'username')))
+      if (!in_arrayi($fullname, array_column($data['registrants'], 'fullname')))
       {
         $mrbs_user = session()->getCurrentUser();
         $mrbs_username = (isset($mrbs_user)) ? $mrbs_user->username : null;
         // then register the user
-        $sql = "INSERT INTO " . _tbl('participants') . " (entry_id, username, create_by, registered)
-                     VALUES (:entry_id, :username, :create_by, :registered)";
+        //hier
+        $sql = "INSERT INTO " . _tbl('participants') . " (entry_id, fullname, create_by, registered, teilnehmertyp, email, ical_uid_part)
+                     VALUES (:entry_id, :fullname, :create_by, :registered, :teilnehmertyp, :email, :ical_uid)";
 
         $sql_params = array(
           ':entry_id'   => $event_id,
-          ':username'   => $username,
+          ':fullname'   => $fullname,
           ':create_by'  => $mrbs_username,
-          ':registered' => time()
+          ':registered' => time(),
+          ':teilnehmertyp' => $teilnehmertyp, //Custom-AM
+          ':email' => $email, //Custom-AM
+          ':ical_uid' => $entry['ical_uid'] //Custom-AM
         );
 
         db()->command($sql, $sql_params);
@@ -120,8 +125,10 @@ switch ($action)
     cancel($registration_id);
     break;
   case 'register':
-    $username = get_form_var('username', 'string');
-    register($username, $event_id);
+    $fullname = get_form_var('fullname', 'string');
+    $teilnehmertyp = get_form_var('teilnehmertyp', 'string');
+    $email = get_form_var('e-mail', 'string');
+    register($fullname, $teilnehmertyp, $email, $event_id);
     break;
   default:
     trigger_error("Unknown action '$action'", E_USER_WARNING);

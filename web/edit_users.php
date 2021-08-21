@@ -216,7 +216,7 @@ function output_row($row)
         case 'timestamp':
           // Convert the SQL timestamp into a time value and back into a localised string and
           // put the UNIX timestamp in a span so that the JavaScript can sort it properly.
-          $unix_timestamp = (isset($col_value)) ? strtotime($col_value) : 0;
+          $unix_timestamp = strtotime($col_value);
           if (($unix_timestamp === false) || ($unix_timestamp < 0))
           {
             // To cater for timestamps before the start of the Unix Epoch
@@ -259,10 +259,6 @@ function output_row($row)
           else
           {
              // strings
-            if (!isset($col_value))
-            {
-              $col_value = '';
-            }
             $values[] = "<div class=\"string\" title=\"" . htmlspecialchars($col_value) . "\">" .
                         htmlspecialchars($col_value) . "</div>";
           }
@@ -904,16 +900,12 @@ if (isset($action) && ($action == "update"))
       {
         $values[$fieldname] = (empty($values[$fieldname])) ? 0 : 1;
       }
-
-      if (isset($values[$fieldname]))
+      // Trim the field to remove accidental whitespace
+      $values[$fieldname] = trim($values[$fieldname]);
+      // Truncate the field to the maximum length as a precaution.
+      if (null !== ($maxlength = maxlength("users.$fieldname")))
       {
-        // Trim the field to remove accidental whitespace
-        $values[$fieldname] = trim($values[$fieldname]);
-        // Truncate the field to the maximum length as a precaution.
-        if (null !== ($maxlength = maxlength("users.$fieldname")))
-        {
-          $values[$fieldname] = utf8_substr($values[$fieldname], 0, $maxlength);
-        }
+        $values[$fieldname] = utf8_substr($values[$fieldname], 0, $maxlength);
       }
     }
 

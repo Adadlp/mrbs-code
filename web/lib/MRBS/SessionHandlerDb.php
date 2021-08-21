@@ -2,20 +2,6 @@
 
 namespace MRBS;
 
-// Suppress deprecation notices until we get to requiring at least PHP 8
-// because union types, needed for the return types of read() and gc(), are
-// not supported in PHP 7.
-global $min_PHP_version;
-if (version_compare($min_PHP_version, '8.0.0') < 0)
-{
-  $old_level = error_reporting();
-  error_reporting($old_level & ~E_DEPRECATED);
-}
-else
-{
-  trigger_error("This code can now be removed", E_USER_NOTICE);
-}
-
 // Use our own PHP session handling by storing sessions in the database.   This has three advantages:
 //    (a) it's more secure, especially on shared servers
 //    (b) it avoids problems with ordinary sessions not working because the PHP session save
@@ -44,7 +30,7 @@ class SessionHandlerDb implements \SessionHandlerInterface
 
   // The return value (usually TRUE on success, FALSE on failure). Note this value is
   // returned internally to PHP for processing.
-  public function open($path, $name): bool
+  public function open($path, $name)
   {
     return true;
   }
@@ -52,7 +38,7 @@ class SessionHandlerDb implements \SessionHandlerInterface
 
   // The return value (usually TRUE on success, FALSE on failure). Note this value is
   // returned internally to PHP for processing.
-  public function close(): bool
+  public function close()
   {
     return true;
   }
@@ -91,7 +77,7 @@ class SessionHandlerDb implements \SessionHandlerInterface
 
   // The return value (usually TRUE on success, FALSE on failure). Note this value is
   // returned internally to PHP for processing.
-  public function write($id, $data): bool
+  public function write($id, $data)
   {
     $sql = "SELECT COUNT(*) FROM " . self::$table . " WHERE id=:id LIMIT 1";
     $rows = db()->query1($sql, array(':id' => $id));
@@ -123,7 +109,7 @@ class SessionHandlerDb implements \SessionHandlerInterface
 
   // The return value (usually TRUE on success, FALSE on failure). Note this value is
   // returned internally to PHP for processing.
-  public function destroy($id): bool
+  public function destroy($id)
   {
     $sql = "DELETE FROM " . self::$table . " WHERE id=:id";
     $rows = db()->command($sql, array(':id' => $id));
@@ -139,14 +125,4 @@ class SessionHandlerDb implements \SessionHandlerInterface
     db()->command($sql, array(':old' => time() - $max_lifetime));
     return true;  // An exception will be thrown on error
   }
-}
-
-// Restore the original error reporting level
-if (version_compare($min_PHP_version, '8.0.0') < 0)
-{
-  error_reporting($old_level);
-}
-else
-{
-  trigger_error("This code can now be removed", E_USER_NOTICE);
 }

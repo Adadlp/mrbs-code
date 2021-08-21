@@ -291,7 +291,7 @@ function url_get_contents($url, $if_modified_since=null)
 }
 
 
-function get_type_options(bool $include_admin_types) : array
+function get_type_options($include_admin_types=false)
 {
   global $booking_types, $auth;
 
@@ -653,12 +653,12 @@ function is_https()
 
 // Returns the current page.   If the page ends in $suffix this will be cut off.
 // The existing query string is optionally added.
-function this_page($with_query_string=false, $suffix='')
+function this_page($with_query_string=false, $suffix=null)
 {
   global $server;
 
   assert(is_bool($with_query_string), '$with_query_string should be a boolean');
-  assert(is_string($suffix), '$suffix should be a string');
+  assert(is_null($suffix) || is_string($suffix), '$suffix should be null or a string');
 
   if ((!isset($server['SCRIPT_NAME']) || ($server['SCRIPT_NAME'] === '') && !is_cli()))
   {

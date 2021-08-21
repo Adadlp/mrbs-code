@@ -59,7 +59,7 @@ function mrbsCheckFree(array $booking, $ignore, $repignore)
   get_area_settings(get_area($room_id));
 
   // Select any meetings which overlap for this room:
-  $sql = "SELECT E.id, name, start_time, end_time, create_by, status, room_name
+  $sql = "SELECT E.id, name, start_time, create_by, status, room_name
             FROM " . _tbl('entry') . " E, " . _tbl('room') . " R
            WHERE E.room_id=R.id
              AND start_time < ?
@@ -97,48 +97,18 @@ function mrbsCheckFree(array $booking, $ignore, $repignore)
   while (false !== ($row = $res->next_row_keyed()))
   {
     unpack_status($row);
-    $start_date = getdate($row['start_time']);
-    $end_date = getdate($row['end_time']);
-    $different_dates = ( $start_date['year'] != $end_date['year'] ||
-                         $start_date['yday'] != $end_date['yday']);
+    $starts = getdate($row['start_time']);
 
     if ($enable_periods)
     {
-      $p_num = $start_date['minutes'];
-      $p_end_num = $end_date['minutes'] - 1;
-      if ($different_dates)
-      {
-        $timestr = $periods[$p_num] . ", " .
-                   utf8_strftime($strftime_format['date'], $row['start_time']) . " - " .
-                   $periods[$p_end_num] . ", " .
-                   utf8_strftime($strftime_format['date'], $row['end_time']);
-      }
-      else
-      {
-        $timestr = $periods[$p_num];
-        if ($p_num != $p_end_num)
-        {
-          $timestr .= " - " . $periods[$p_end_num];
-        }
-        $timestr .= ", " . utf8_strftime($strftime_format['date'], $row['start_time']);
-      }
+      $p_num =$starts['minutes'];
+      $startstr = utf8_strftime($strftime_format['date'] . ", ",
+                                $row['start_time']) . htmlspecialchars($periods[$p_num]);
     }
     else
     {
-      if ($different_dates)
-      {
-        $date_format = ($twentyfourhour_format) ? $strftime_format['datetime24'] : $strftime_format['datetime12'];
-      }
-      else
-      {
-        $date_format = ($twentyfourhour_format) ? $strftime_format['time24'] : $strftime_format['time12'];
-      }
-      $timestr = utf8_strftime($date_format, $row['start_time']) . " - " .
-                 utf8_strftime($date_format, $row['end_time']);
-      if (!$different_dates)
-      {
-        $timestr .= ", " . utf8_strftime($strftime_format['date'], $row['start_time']);
-      }
+      $startstr = utf8_strftime(($twentyfourhour_format) ? $strftime_format['datetime24'] : $strftime_format['datetime12'],
+                                $row['start_time']);
     }
 
     if (is_private_event($row['private']) &&
@@ -149,9 +119,9 @@ function mrbsCheckFree(array $booking, $ignore, $repignore)
     }
 
     // enclose the viewday etc. links in a span to make it easier for JavaScript to strip them out
-    $vars = array('year'  => $start_date['year'],
-                  'month' => $start_date['mon'],
-                  'day'   => $start_date['mday'],
+    $vars = array('year'  => $starts['year'],
+                  'month' => $starts['mon'],
+                  'day'   => $starts['mday'],
                   'area'  => $area,
                   'room'  => $room_id);
 
@@ -159,7 +129,7 @@ function mrbsCheckFree(array $booking, $ignore, $repignore)
 
     $err[] = '<a href="' . htmlspecialchars(multisite('view_entry.php?id=' . $row['id'])) . '">' .
              htmlspecialchars($row['name']) . '</a>' .
-             ' (' . htmlspecialchars($timestr) . ', ' . htmlspecialchars($row['room_name']) . ') ' .
+             ' (' . $startstr . ', ' . htmlspecialchars($row['room_name']) . ') ' .
              '<span>(' .
              '<a href="' . htmlspecialchars(multisite("index.php?view=day&$query")) . '">' . get_vocab('viewday') . '</a> | ' .
              '<a href="' . htmlspecialchars(multisite("index.php?view=week&$query")) . '">' . get_vocab('viewweek') . '</a> | ' .
@@ -1611,19 +1581,19 @@ function get_registration_by_id($id)
 
 
 // Get the people registered for an event
-function get_registrants($id, $series)
+function get_registrants($ical_uid, $series)
 {
   // You can't register for a series (yet)
-  if ($series)
+  /*if ($series)
   {
     return null;
-  }
+  }*/
 
   $sql = "SELECT *
             FROM " . _tbl('participants') . "
-           WHERE entry_id=:entry_id";
+           WHERE ical_uid_part=:ical_uid";
 
-  $res = db()->query($sql, array(':entry_id' => $id));
+  $res = db()->query($sql, array(':ical_uid' => $ical_uid));
 
   return $res->all_rows_keyed();
 }
@@ -1632,7 +1602,7 @@ function get_registrants($id, $series)
 // Check whether any entries in a series have users registered
 function series_has_registrants($repeat_id)
 {
-  $sql = "SELECT COUNT(username)
+  $sql = "SELECT COUNT(fullname)
             FROM " . _tbl('entry') . " E
        LEFT JOIN " . _tbl('participants') . " P ON E.id=P.entry_id
            WHERE E.repeat_id=:repeat_id
@@ -1795,7 +1765,8 @@ function get_booking_info($id, $series, $silent=FALSE)
   unpack_status($row);
 
   // Get some extra information
-  $row['registrants'] = get_registrants($id, $series);
+  //id zu ical_uid
+  $row['registrants'] = get_registrants($row['ical_uid'], $series);
 
   if ($series)
   {
@@ -2281,7 +2252,7 @@ function update_participants($old_id, $new_id)
 function mrbsMakeBookings(array $bookings, $id=NULL, $just_check=FALSE, $skip=FALSE, $original_room_id=NULL, $send_mail=FALSE, $edit_type='')
 {
   global $max_rep_entrys, $enable_periods, $resolution, $mail_settings;
-  global $prevent_simultaneous_bookings, $auth;
+  global $prevent_simultaneous_bookings;
 
   // All the data, except for the status and room id, will be common
   // across the bookings
@@ -2346,14 +2317,13 @@ function mrbsMakeBookings(array $bookings, $id=NULL, $just_check=FALSE, $skip=FA
   $skip_lists = array();    // Holds a 2D array of bookings to skip past.  Indexed
                             // by room id and start time
 
-  // Do the simple check for simultaneous bookings and or selection of multiple rooms: if
-  // there is more than one booking then this is going to result in a simultaneous booking.
-  // The only question is whether this a notice or an error.  If the user is an ordinary user
-  // in more than one of the rooms, then it's an error, otherwise a notice.
+  // Do the simple check for simultaneous bookings: if there is more than one booking
+  // then this is going to result in a simultaneous booking.  The only question is whether
+  // this a notice or an error.  If the user is an ordinary user in more than one of
+  // the rooms, then it's an error, otherwise a notice.
   // The policy check later on will check whether the booking is at the same time as
   // any other bookings made by this user.
-  if (($prevent_simultaneous_bookings || $auth['only_admin_can_select_multiroom'])
-      && (count($bookings) > 1))
+  if ($prevent_simultaneous_bookings && (count($bookings) > 1))
   {
     $violation_status = 'notices';
     $non_admin_rooms = 0;
@@ -2370,14 +2340,7 @@ function mrbsMakeBookings(array $bookings, $id=NULL, $just_check=FALSE, $skip=FA
         }
       }
     }
-    if ($prevent_simultaneous_bookings)
-    {
-      $violations[$violation_status][] = get_vocab('no_simultaneous_bookings');
-    }
-    if ($auth['only_admin_can_select_multiroom'])
-    {
-      $violations[$violation_status][] = get_vocab('multiroom_not_allowed');
-    }
+    $violations[$violation_status][] = get_vocab('no_simultaneous_bookings');
   }
 
   // Check for any schedule conflicts in each room we're going to try and

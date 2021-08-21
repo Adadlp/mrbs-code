@@ -2,10 +2,9 @@
 namespace MRBS;
 
 use MRBS\Form\Form;
-use SessionHandler;
 
 
-function init_errors() : void
+function init_errors()
 {
   global $debug;
 
@@ -58,14 +57,14 @@ function init_errors() : void
 }
 
 
-function init_joomla() : void
+function init_joomla()
 {
   $mainframe = JFactory::getApplication('site');
   $mainframe->initialise();
 }
 
 
-function init_sessions() : void
+function init_sessions()
 {
   global $auth;
 
@@ -79,13 +78,6 @@ function init_sessions() : void
   if ($auth['session'] == 'joomla')
   {
     init_joomla();
-    return;
-  }
-
-  // If we're using SAML then initialising sessions here can interfere with
-  // session handling in some SAML libraries
-  if (($auth['session'] == 'saml') && $auth['saml']['disable_mrbs_session_init'])
-  {
     return;
   }
 
@@ -140,7 +132,7 @@ function init_sessions() : void
       trigger_error($message, E_USER_WARNING);
     }
 
-    $handler = new SessionHandler();
+    $handler = new \SessionHandler();
     session_set_save_handler($handler, true);
 
     if (false === session_start())

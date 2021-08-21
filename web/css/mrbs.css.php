@@ -1711,7 +1711,7 @@ div#checks span {
   float: left;
 }
 
-.edit_entry_handler #submit_buttons form input {
+.edit_entry_handler #submit_buttons form {
   float: left;
   margin: 1em 2em 1em 0;
 }
@@ -2331,7 +2331,7 @@ div#site_faq_body {
 }
 
 .view_entry #registrants thead th {
-  text-align: left;
+  text-align: middle;
 }
 
 .view_entry #registrants th,

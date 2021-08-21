@@ -13,9 +13,10 @@ require "defaultincludes.inc";
 require_once "mrbs_sql.inc";
 require_once "functions_view.inc";
 
-
+//hier fertig wurde 2 Reihen hinzugefügt
 function generate_registrant_table($row, $previous_page=null)
 {
+  
   echo "<div id=\"registrant_list\" class=\"datatable_container\">\n";
   echo "<table id=\"registrants\" class=\"admin_table display\">\n";
 
@@ -23,6 +24,8 @@ function generate_registrant_table($row, $previous_page=null)
   echo '<tr>';
   echo '<th></th>';
   echo '<th>' . get_vocab('name') . '</th>';
+  echo '<th>' . get_vocab('mail') . '</th>';
+  echo '<th>' . get_vocab('teilnehmertyp') . '</th>';
   echo '<th>' . get_vocab('registered_by') . '</th>';
   echo '<th>' . get_vocab('registered_on') . '</th>';
   echo "</tr>\n";
@@ -36,7 +39,7 @@ function generate_registrant_table($row, $previous_page=null)
     echo '<td>';
     // A registration can be cancelled by the registrant or by
     // the person who registered them or by a booking admin
-    if (getWritable($registrant['username'], $row['room_id']) ||
+    if (getWritable($registrant['fullname'], $row['room_id']) ||
         getWritable($registrant['create_by'], $row['room_id']))
     {
       generate_cancel_registration_button(
@@ -48,8 +51,16 @@ function generate_registrant_table($row, $previous_page=null)
     }
     echo '</td>';
     // Registrant
-    $registrant_user = auth()->getUser($registrant['username']);
-    $display_name = (isset($registrant_user)) ? $registrant_user->display_name : $registrant['username'];
+    $registrant_user = auth()->getUser($registrant['fullname']);
+    $display_name = (isset($registrant_user)) ? $registrant_user->display_name : $registrant['fullname'];
+    $sortname = get_sortable_name($display_name);
+    echo '<td data-order="' . htmlspecialchars($sortname) . '">' . htmlspecialchars($display_name) . '</td>';
+    //E-Mail
+    $display_name = $registrant['email']; //(isset($registrant_user)) ? $registrant_user->display_name : $registrant['fullname'];
+    $sortname = get_sortable_name($display_name);
+    echo '<td data-order="' . htmlspecialchars($sortname) . '">' . htmlspecialchars($display_name) . '</td>';
+    //Teilnehmertyp
+    $display_name = $registrant['teilnehmertyp']; //(isset($registrant_user)) ? $registrant_user->display_name : $registrant['fullname'];
     $sortname = get_sortable_name($display_name);
     echo '<td data-order="' . htmlspecialchars($sortname) . '">' . htmlspecialchars($display_name) . '</td>';
     // Registered by - only show if it's someone other than the registrant
@@ -130,8 +141,8 @@ function generate_cancel_registration_button(array $row, array $registrant, $lab
 
   // Submit button
   $button = new ElementInputSubmit();
-  $registrant_user = auth()->getUser($registrant['username']);
-  $display_name = (isset($registrant_user)) ? $registrant_user->display_name : $registrant['username'];
+  $registrant_user = auth()->getUser($registrant['fullname']);
+  $display_name = (isset($registrant_user)) ? $registrant_user->display_name : $registrant['fullname'];
   $message = get_vocab("confirm_del_registrant", $display_name);
   $button->setAttributes(array(
       'value' => $label_text,
@@ -154,7 +165,7 @@ function generate_cancel_registration_button(array $row, array $registrant, $lab
   $form->render();
 }
 
-
+//hier
 function generate_register_button($row, $previous_page=null)
 {
   // Check that the user is an an admin or else that the entry is open for registration
@@ -186,18 +197,41 @@ function generate_register_button($row, $previous_page=null)
   {
     $fieldset = new ElementFieldset();
     $params = array(
-        'value'     => $mrbs_user->username,
+        'value'     => '',
         'disabled'  => false,
         'required'  => true,
-        'field'     => 'participants.username',
+        'field'     => 'participants.fullname',
         'label'     => get_vocab('name'),
-        'name'      => 'username',
+        'name'      => 'fullname',
       );
-    $fieldset->addElement(get_user_field($params, true));
+    $fieldset->addElement(get_field_entry_input($params));
+    $form->addElement($fieldset);
+    //geändert neues textfeld E-Mail
+    
+    $fieldset = new ElementFieldset();
+    $params = array('label'    => get_vocab('mail'), //Name vom Input
+                    'name'     => 'e-mail', //keine Anhung
+                    'disabled'  => false, //Ob deaktiviert
+                    'required'  => true, //Ob angegeben werden muss
+                    'field'    => "participants.e-mail", //Wahrscheinlich der wert der gespeichert werden soll
+                    'value'    => "" //standard wert
+    );
+    $fieldset->addElement(get_field_entry_input($params));
+    $form->addElement($fieldset);
+      //Teilnehmerart
+    $fieldset = new ElementFieldset();
+    $params = array('label'    => get_vocab('teilnehmertyp'), //Name vom Input
+                    'name'     => 'teilnehmertyp', //keine Anhung
+                    'disabled'  => false, //Ob deaktiviert
+                    'required'  => false, //Ob angegeben werden muss
+                    'field'    => "participants.teilnehmertyp", //Wahrscheinlich der wert der gespeichert werden soll
+                    'value'    => "" //standard wert
+    );
+    $fieldset->addElement(get_field_entry_input($params));
     $form->addElement($fieldset);
   }
 
-  // Submit button
+  //Submit button
   $fieldset = new ElementFieldset();
   $field = new FieldDiv();
   $element = new ElementInputSubmit();
@@ -223,7 +257,7 @@ function generate_event_registration($row, $previous_page=null)
   $can_see_others = $can_register_others || $auth['show_registrant_names'] || getWritable($row['create_by'], $row['room_id']);
   $n_registered = count($row['registrants']);
 
-
+  echo '<h4>' . get_vocab('event_registration') . "</h4>\n";
   echo '<h4>' . get_vocab('event_registration') . "</h4>\n";
   echo "<div id=\"registration\">\n";
   echo "<table class=\"list\">\n";
@@ -259,7 +293,6 @@ function generate_event_registration($row, $previous_page=null)
   echo "</tr>\n";
   echo "</tbody>\n";
   echo "</table>\n";
-
   // Display the list of registrants, if the user is allowed to see it, which is if
   // they have write access for this booking.
   // Display it as a table because in the future we might want to (a) add more columns,
@@ -273,12 +306,12 @@ function generate_event_registration($row, $previous_page=null)
   // Display registration information and buttons for this user
   $mrbs_user = session()->getCurrentUser();
   if (!$can_register_others && in_arrayi($mrbs_user->username,
-                                         array_column($row['registrants'], 'username')))
+                                         array_column($row['registrants'], 'fullname')))
   {
     echo '<p>' . htmlspecialchars(get_vocab('already_registered')) . "</p>\n";
     foreach ($row['registrants'] as $registrant)
     {
-      if (strcasecmp($mrbs_user->username, $registrant['username']) === 0)
+      if (strcasecmp($mrbs_user->username, $registrant['fullname']) === 0)
       {
         $this_registrant = $registrant;
         break;
@@ -298,7 +331,7 @@ function generate_event_registration($row, $previous_page=null)
     }
   }
   else
-  {
+  { 
     if (empty($row['registrant_limit_enabled']) ||
       ($row['registrant_limit'] > $n_registered))
     {

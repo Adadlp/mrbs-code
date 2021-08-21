@@ -497,18 +497,16 @@ function get_field_rooms($value, $disabled=false)
 
 function get_field_type($value, $disabled=false)
 {
-  global $is_mandatory_field;
-
-  // Get the options
-  $options = get_type_options(is_book_admin());
+  global $booking_types, $is_mandatory_field;
 
   // Don't bother with types if there's only one of them (or even none)
-  // for the current user.
-  if (count($options) < 2)
+  if (!isset($booking_types) || (count($booking_types) < 2))
   {
     return null;
   }
-  
+
+  // Get the options
+  $options = get_type_options(is_book_admin());
   // If it's a mandatory field add a blank option to force a selection
   if (!empty($is_mandatory_field['entry.type']))
   {
@@ -961,7 +959,7 @@ function get_fieldset_registration()
   if ($enable_periods)
   {
     $time = strtotime($periods_booking_opens);
-    $time = utf8_strftime(hour_min_format(), $time);
+    $time = strftime(hour_min_format(), $time);
     $in_advance_vocab = get_vocab('in_advance_periods', $time);
   }
   else
@@ -1136,8 +1134,6 @@ $end_seconds = get_form_var('end_seconds', 'int');
 $selected_rooms = get_form_var('rooms', 'array');
 $start_date = get_form_var('start_date', 'string');
 $end_date = get_form_var('end_date', 'string');
-// And this comes from edit_entry_handler.php
-$back_button = get_form_var('back_button', 'string');
 
 
 // Check the CSRF token.
@@ -1370,9 +1366,9 @@ if (isset($id))
         $end_time = $row['end_time'];
       }
 
-      $rep_end_day   = (int)utf8_strftime('%d', $row['end_date']);
-      $rep_end_month = (int)utf8_strftime('%m', $row['end_date']);
-      $rep_end_year  = (int)utf8_strftime('%Y', $row['end_date']);
+      $rep_end_day   = (int)strftime('%d', $row['end_date']);
+      $rep_end_month = (int)strftime('%m', $row['end_date']);
+      $rep_end_year  = (int)strftime('%Y', $row['end_date']);
       // Get the end date in string format as well, for use when
       // the input is disabled
       $rep_end_date = utf8_strftime('%A %d %B %Y',$row['end_date']);
@@ -1545,8 +1541,8 @@ if (!isset($month_absolute))
 }
 list($month_relative_ord, $month_relative_day) = byday_split($month_relative);
 
-$start_hour  = utf8_strftime('%H', $start_time);
-$start_min   = utf8_strftime('%M', $start_time);
+$start_hour  = strftime('%H', $start_time);
+$start_min   = strftime('%M', $start_time);
 
 // Determine the area id of the room in question first
 $area_id = mrbsGetRoomArea($room_id);
@@ -1706,12 +1702,6 @@ $form->setAttributes(array('class'  => 'standard js_hidden',
                            'id'     => 'main',
                            'action' => multisite('edit_entry_handler.php'),
                            'method' => 'post'));
-
-if (!empty($back_button))
-{
-  // Add a data attribute so that the JavaScript can tell where we've come from
-  $form->setAttribute('data-back', 1);
-}
 
 $hidden_inputs = array('returl'    => $returl,
                        'rep_id'    => $rep_id,

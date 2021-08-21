@@ -394,8 +394,6 @@ function is_admin()
 //           the room(s); otherwise FALSE
 function is_book_admin($rooms=null, $all=true)
 {
-  global $min_booking_admin_level;
-
   if (is_array($rooms) && (count($rooms) > 0))
   {
     if ($all)
@@ -435,7 +433,7 @@ function is_book_admin($rooms=null, $all=true)
 
   $mrbs_user = session()->getCurrentUser();
 
-  return (isset($mrbs_user) && ($mrbs_user->level >= $min_booking_admin_level));
+  return (isset($mrbs_user) && ($mrbs_user->level >= 2));
 }
 
 
